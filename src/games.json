@@ -1,0 +1,38 @@
+[
+  {
+    "id": "slope",
+    "title": "Slope",
+    "thumbnail": "https://picsum.photos/seed/slope/400/250",
+    "iframeUrl": "https://wayback.google.com/wayback/proxy?url=https://kdata1.com/2020/05/slope/"
+  },
+  {
+    "id": "run3",
+    "title": "Run 3",
+    "thumbnail": "https://picsum.photos/seed/run3/400/250",
+    "iframeUrl": "https://wayback.google.com/wayback/proxy?url=https://player.vimeo.com/video/285441560"
+  },
+  {
+    "id": "tunnel-rush",
+    "title": "Tunnel Rush",
+    "thumbnail": "https://picsum.photos/seed/tunnel/400/250",
+    "iframeUrl": "https://wayback.google.com/wayback/proxy?url=https://kdata1.com/2020/05/tunnel-rush/"
+  },
+  {
+    "id": "1v1-lol",
+    "title": "1v1.LOL",
+    "thumbnail": "https://picsum.photos/seed/1v1/400/250",
+    "iframeUrl": "https://1v1.lol"
+  },
+  {
+    "id": "retro-bowl",
+    "title": "Retro Bowl",
+    "thumbnail": "https://picsum.photos/seed/football/400/250",
+    "iframeUrl": "https://wayback.google.com/wayback/proxy?url=https://kdata1.com/2020/10/retro-bowl/"
+  },
+  {
+    "id": "geometry-dash",
+    "title": "Geometry Dash",
+    "thumbnail": "https://picsum.photos/seed/geometry/400/250",
+    "iframeUrl": "https://wayback.google.com/wayback/proxy?url=https://kdata1.com/2020/05/geometry-dash-online/"
+  }
+]
