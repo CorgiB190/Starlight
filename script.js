@@ -348,3 +348,5 @@ if (document.getElementById('player-fullscreen-btn')) document.getElementById('p
 if (gridView) {
     loadGames();
 }
+
+window.SnakeGame = SnakeGame;
