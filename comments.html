@@ -18,9 +18,12 @@
     <div class="max-w-3xl mx-auto">
         <header class="flex items-center justify-between mb-12">
             <div class="flex items-center gap-4">
-                <a href="/" class="text-4xl font-black text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase italic hover:scale-105 transition-transform">STARLIGHT</a>
+                <a href="/" id="logo-link" class="text-4xl font-black text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase italic hover:scale-105 transition-transform">STARLIGHT</a>
             </div>
-            <a href="/" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all">BACK TO GAMES</a>
+            <div class="flex gap-4">
+                <a href="/soundboard.html" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all uppercase italic">SOUNDS</a>
+                <a href="/" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all">BACK TO GAMES</a>
+            </div>
         </header>
 
         <div class="bg-white comic-border rounded-[2rem] p-8 comic-shadow mb-12">
@@ -47,6 +50,27 @@
     </div>
 
     <script type="module">
+        // Secret Admin Access: Click logo 5 times
+        let logoClicks = 0;
+        let logoClickTimeout;
+        const logo = document.getElementById('logo-link');
+        if (logo) {
+            logo.addEventListener('click', (e) => {
+                logoClicks++;
+                clearTimeout(logoClickTimeout);
+                
+                if (logoClicks >= 5) {
+                    e.preventDefault();
+                    window.location.href = '/admin.html';
+                    logoClicks = 0;
+                } else {
+                    logoClickTimeout = setTimeout(() => {
+                        logoClicks = 0;
+                    }, 2000);
+                }
+            });
+        }
+
         const commentForm = document.getElementById('comment-form');
         const commentsContainer = document.getElementById('comments-container');
         const usernameInput = document.getElementById('username');

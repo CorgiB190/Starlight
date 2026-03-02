@@ -26,6 +26,7 @@ export default defineConfig(({mode}) => {
           admin: path.resolve(__dirname, 'admin.html'),
           game: path.resolve(__dirname, 'game.html'),
           comments: path.resolve(__dirname, 'comments.html'),
+          soundboard: path.resolve(__dirname, 'soundboard.html'),
         },
       },
     },

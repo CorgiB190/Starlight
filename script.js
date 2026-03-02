@@ -350,3 +350,23 @@ if (gridView) {
 }
 
 window.SnakeGame = SnakeGame;
+
+// Secret Admin Access: Click logo 5 times
+let logoClicks = 0;
+let logoClickTimeout;
+const logo = document.getElementById('logo');
+if (logo) {
+    logo.addEventListener('click', () => {
+        logoClicks++;
+        clearTimeout(logoClickTimeout);
+        
+        if (logoClicks >= 5) {
+            window.location.href = '/admin.html';
+            logoClicks = 0;
+        } else {
+            logoClickTimeout = setTimeout(() => {
+                logoClicks = 0;
+            }, 2000);
+        }
+    });
+}

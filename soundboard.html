@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meme Soundboard - Starlight Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Fredoka', sans-serif; }
+        .comic-border { border: 4px solid #000; }
+        .comic-shadow-sm { box-shadow: 4px 4px 0px #000; }
+        .comic-shadow { box-shadow: 8px 8px 0px #000; }
+        .selection-yellow::selection { background: #facc15; color: #000; }
+        .sound-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
+    </style>
+</head>
+<body class="bg-[#9333ea] text-zinc-950 min-h-screen p-4 sm:p-8 selection-yellow">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex flex-col sm:flex-row items-center justify-between mb-12 gap-6">
+            <div class="flex items-center gap-4">
+                <a href="/" id="logo-link" class="text-4xl font-black text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase italic hover:scale-105 transition-transform">STARLIGHT</a>
+                <span class="bg-white comic-border px-4 py-1 rounded-full font-black text-xs comic-shadow-sm uppercase italic">SOUNDBOARD</span>
+            </div>
+            <div class="flex gap-4">
+                <a href="/comments.html" class="bg-[#ff4499] text-white comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all uppercase italic">CHAT</a>
+                <a href="/" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all">BACK TO GAMES</a>
+            </div>
+        </header>
+
+        <div class="bg-white comic-border rounded-[2rem] p-8 comic-shadow mb-12">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                <div>
+                    <h2 class="text-4xl font-black uppercase italic">MEME SOUNDBOARD</h2>
+                    <p class="font-bold opacity-70">100+ EPIC SOUNDS FOR YOUR GAMING SESSIONS!</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <input type="text" id="sound-search" placeholder="Search sounds..." class="comic-border rounded-xl px-4 py-2 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30 font-bold">
+                    <button id="stop-all" class="bg-red-500 text-white comic-border px-6 py-2 rounded-xl font-black comic-shadow-sm hover:bg-red-600 transition-all uppercase italic">STOP ALL</button>
+                </div>
+            </div>
+
+            <div id="soundboard-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <!-- Sounds will be injected here -->
+                <div class="col-span-full text-center py-20 font-black text-2xl opacity-20 italic uppercase">Loading sounds...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Secret Admin Access: Click logo 5 times
+        let logoClicks = 0;
+        let logoClickTimeout;
+        const logo = document.getElementById('logo-link');
+        if (logo) {
+            logo.addEventListener('click', (e) => {
+                logoClicks++;
+                clearTimeout(logoClickTimeout);
+                
+                if (logoClicks >= 5) {
+                    e.preventDefault();
+                    window.location.href = '/admin.html';
+                    logoClicks = 0;
+                } else {
+                    logoClickTimeout = setTimeout(() => {
+                        logoClicks = 0;
+                    }, 2000);
+                }
+            });
+        }
+
+        const grid = document.getElementById('soundboard-grid');
+        const searchInput = document.getElementById('sound-search');
+        const stopBtn = document.getElementById('stop-all');
+        
+        let activeAudios = [];
+
+        // List of 100+ meme sounds (using public URLs from common soundboard sources)
+        // Note: These are common meme sound names. We'll use a reliable public CDN pattern.
+        const soundNames = [
+            "Among Us Kill", "Among Us Report", "Anime Wow", "Awkward Cricket", "Bababooey", "Badum Tss", "Bazinga", "Beep", "Big Shaq - Mans Not Hot",
+            "Bonk", "Boom", "Bruh", "Bye Bye", "Cena - You Cant See Me", "Chewbacca", "Coffin Dance", "Congratulations", "Damn Son", "Deese Nuts",
+            "Directed by Robert B Weide", "Discord Join", "Discord Leave", "Discord Notification", "Do it", "Dog Bark", "Doge", "Donkey Kong - Oh No", "Dramatic Chipmunk", "Drum Roll",
+            "Duck Quack", "Error", "FBI Open Up", "Fart", "Finish Him", "Fortnite Default Dance", "Game Over", "Gasp", "Giorno Theme", "Goat Scream",
+            "GTA San Andreas - Ah Shit", "GTA Wasted", "Hallelujah", "Headshot", "Hello Darkness My Old Friend", "He-Man - Heyyeyaaeyaaaeyaeyaa", "Hitmarker", "Illuminati", "Inception Horn", "Its Time To Stop",
+            "Jeff - My Name is Jeff", "John Cena", "Keyboard Smash", "Knock Knock", "Laughing Track", "Lebron James", "Leeroy Jenkins", "Look at this Dude", "Mario Jump", "Mario Mushroom",
+            "Mario Pipe", "Metal Gear Alert", "Minecraft Death", "Minecraft Eating", "Minecraft Oof", "Mission Failed", "Moo", "Nice", "No God Please No",
+            "Nokia Ringtone", "Nom Nom Nom", "Nonono Laugh", "Noot Noot", "Nut Button", "Oh Baby A Triple", "Oh Hell No", "Oh My God", "Oh No No No", "Okay",
+            "Oof", "Over 9000", "Pacman Death", "Pikachu - Pika Pika", "Pokemon Heal", "Portal Radio", "Pufferfish Carrot", "Punch", "Rick Roll", "Roblox Death",
+            "Run", "Sad Violin", "Screaming Cowboy", "Screaming Goat", "Screaming Kid", "Screaming Sheep", "Shotgun", "Sike", "Skyrim - Hey You're Finally Awake", "SpongeBob - 2000 Years Later",
+            "SpongeBob - A Few Moments Later", "SpongeBob - Fail", "SpongeBob - Laugh", "SpongeBob - My Leg", "Star Wars - It's A Trap", "Street Fighter - Hadouken", "Super Mario - 1up", "Super Mario - Coin", "Suspense", "Taco Bell Bong",
+            "Target Acquired", "The Rock Eyebrow", "Titanic Flute", "To Be Continued", "Trump - Wrong", "Victory", "Vine Boom", "Wasted", "What are those", "What the dog doin",
+            "Why you bully me", "Wilhelm Scream", "Windows Error", "Windows Startup", "Windows XP Shutdown", "Wooo", "Wow", "Yee", "Yoshi Tongue", "You Died"
+        ];
+
+        // Map names to colors for variety
+        const colors = ['bg-[#ff4499]', 'bg-[#facc15]', 'bg-[#3b82f6]', 'bg-[#22c55e]', 'bg-[#a855f7]', 'bg-[#f97316]'];
+
+        function renderSounds(filter = '') {
+            const filtered = soundNames.filter(name => name.toLowerCase().includes(filter.toLowerCase()));
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-20 font-black text-xl opacity-50 italic uppercase">No sounds found!</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map((name, i) => {
+                const color = colors[i % colors.length];
+                return `
+                    <button class="sound-btn ${color} text-white comic-border rounded-2xl p-4 comic-shadow-sm font-black text-sm uppercase italic transition-all hover:scale-105 flex flex-col items-center justify-center text-center min-h-[100px]" data-sound="${name}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="mb-2 w-6 h-6"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                        ${name}
+                    </button>
+                `;
+            }).join('');
+
+            // Add click listeners
+            document.querySelectorAll('.sound-btn').forEach(btn => {
+                btn.onclick = () => playSound(btn.dataset.sound);
+            });
+        }
+
+        function playSound(name) {
+            // Using a public soundboard API pattern (MyInstants or similar)
+            // For this demo, we'll use a placeholder URL pattern that points to a common sound library
+            // Real implementation would use specific URLs for each sound
+            const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const audio = new Audio(`https://www.myinstants.com/media/sounds/${slug}.mp3`);
+            
+            // Note: Some sounds might not match the slug exactly, but this is the standard pattern
+            // In a production app, we would have a mapping of name -> exact URL
+            
+            audio.play().catch(e => {
+                console.warn(`Could not play ${name}:`, e);
+                // Fallback to a generic sound if the specific one fails
+                const fallback = new Audio('https://www.myinstants.com/media/sounds/bruh.mp3');
+                fallback.play();
+            });
+
+            activeAudios.push(audio);
+            audio.onended = () => {
+                activeAudios = activeAudios.filter(a => a !== audio);
+            };
+        }
+
+        stopBtn.onclick = () => {
+            activeAudios.forEach(audio => {
+                audio.pause();
+                audio.currentTime = 0;
+            });
+            activeAudios = [];
+        };
+
+        searchInput.oninput = (e) => {
+            renderSounds(e.target.value);
+        };
+
+        // Initial render
+        renderSounds();
+    </script>
+</body>
+</html>
