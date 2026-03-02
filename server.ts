@@ -16,6 +16,38 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Ensure src directory exists for data files
+  try {
+    await fs.mkdir(path.join(__dirname, "src"), { recursive: true });
+    // Initialize games.json if it doesn't exist
+    try {
+      await fs.access(GAMES_FILE);
+    } catch {
+      await fs.writeFile(GAMES_FILE, JSON.stringify([
+        {
+          "id": "stickman-parkour",
+          "title": "Stickman Parkour",
+          "thumbnail": "https://picsum.photos/seed/stickman/400/250",
+          "iframeUrl": "https://d11jzht7mj96rr.cloudfront.net/games/2024/construct/219/stickman-parkour/index-gg.html"
+        },
+        {
+          "id": "retro-snake",
+          "title": "Retro Snake",
+          "thumbnail": "https://picsum.photos/seed/snake/400/250",
+          "type": "internal"
+        }
+      ], null, 2));
+    }
+    // Initialize comments.json if it doesn't exist
+    try {
+      await fs.access(COMMENTS_FILE);
+    } catch {
+      await fs.writeFile(COMMENTS_FILE, JSON.stringify([], null, 2));
+    }
+  } catch (e) {
+    console.error("Error initializing data directory:", e);
+  }
+
   // API routes
   app.get("/api/games", async (req, res) => {
     try {
@@ -85,11 +117,57 @@ async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom", // Changed to custom to handle multi-page better
     });
     app.use(vite.middlewares);
+    
+    // In dev, Vite handles the HTML files, but we can help it
+    app.get(["/", "/index", "/index.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "index.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
+    
+    app.get(["/admin", "/admin.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "admin.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
+
+    app.get(["/comments", "/comments.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "comments.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
+
+    app.get(["/soundboard", "/soundboard.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "soundboard.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
+
+    app.get(["/game", "/game.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "game.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
   } else {
-    app.use(express.static("dist"));
+    // Production: Serve static files from dist
+    app.use(express.static("dist", { extensions: ["html"] }));
+    
+    // Handle routes without .html extension in production
+    app.get("/", (req, res) => res.sendFile(path.join(__dirname, "dist", "index.html")));
+    app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "dist", "admin.html")));
+    app.get("/comments", (req, res) => res.sendFile(path.join(__dirname, "dist", "comments.html")));
+    app.get("/soundboard", (req, res) => res.sendFile(path.join(__dirname, "dist", "soundboard.html")));
+    app.get("/game", (req, res) => res.sendFile(path.join(__dirname, "dist", "game.html")));
+
+    // Catch-all for SPA-like behavior on index.html if needed, but we have specific routes above
     app.get("*", (req, res) => {
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
