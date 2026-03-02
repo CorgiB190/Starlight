@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel - Starlight Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Fredoka', sans-serif; }
+        .comic-border { border: 4px solid #000; }
+        .comic-shadow-sm { box-shadow: 4px 4px 0px #000; }
+        .comic-shadow { box-shadow: 8px 8px 0px #000; }
+    </style>
+</head>
+<body class="bg-[#9333ea] text-zinc-950 min-h-screen p-4 sm:p-8">
+    <!-- Passcode Overlay -->
+    <div id="passcode-overlay" class="fixed inset-0 z-50 bg-[#9333ea] flex items-center justify-center p-4">
+        <div class="bg-white comic-border rounded-[2rem] p-10 comic-shadow max-w-sm w-full text-center">
+            <h2 class="text-3xl font-black mb-6 uppercase italic">SECRET ACCESS</h2>
+            <p class="font-bold mb-6 opacity-70">ENTER THE ADMIN CODE</p>
+            <input type="password" id="admin-code-input" class="w-full comic-border rounded-xl p-4 text-center text-2xl font-black tracking-[1rem] focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30 mb-6" maxlength="4" placeholder="****">
+            <button id="unlock-btn" class="w-full bg-[#ff4499] text-white comic-border rounded-2xl py-4 font-black text-xl comic-shadow-sm hover:bg-[#ee3388] transition-all uppercase italic">UNLOCK</button>
+            <a href="/" class="inline-block mt-6 font-bold text-sm opacity-50 hover:opacity-100 transition-opacity">GO BACK HOME</a>
+        </div>
+    </div>
+
+    <!-- Admin Content (Hidden by default) -->
+    <div id="admin-content" class="max-w-4xl mx-auto hidden">
+        <header class="flex items-center justify-between mb-12">
+            <h1 class="text-4xl font-black text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase italic">ADMIN PANEL</h1>
+            <div class="flex gap-4">
+                <a href="/comments.html" class="bg-[#ff4499] text-white comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all uppercase italic">CHAT</a>
+                <a href="/" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all">BACK TO SITE</a>
+            </div>
+        </header>
+
+        <div class="bg-white comic-border rounded-[2rem] p-8 comic-shadow mb-12">
+            <h2 class="text-2xl font-black mb-6 uppercase italic">Add New Game</h2>
+            <form id="add-game-form" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold uppercase text-sm">Game ID (unique)</label>
+                    <input type="text" id="game-id" required class="comic-border rounded-xl p-3 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30" placeholder="e.g. super-mario">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold uppercase text-sm">Title</label>
+                    <input type="text" id="game-title" required class="comic-border rounded-xl p-3 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30" placeholder="e.g. Super Mario">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold uppercase text-sm">Thumbnail URL</label>
+                    <input type="url" id="game-thumb" required class="comic-border rounded-xl p-3 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30" placeholder="https://...">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold uppercase text-sm">Game Type</label>
+                    <select id="game-type" class="comic-border rounded-xl p-3 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30">
+                        <option value="iframe">Iframe (External)</option>
+                        <option value="internal">Internal (Canvas)</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-2 sm:col-span-2" id="url-container">
+                    <label class="font-bold uppercase text-sm">Iframe URL</label>
+                    <input type="url" id="game-url" class="comic-border rounded-xl p-3 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30" placeholder="https://...">
+                </div>
+                <button type="submit" class="sm:col-span-2 bg-[#ff4499] text-white comic-border rounded-2xl py-4 font-black text-xl comic-shadow-sm hover:bg-[#ee3388] transition-all uppercase italic">ADD GAME!</button>
+            </form>
+        </div>
+
+        <div class="bg-[#facc15] comic-border rounded-[2rem] p-8 comic-shadow">
+            <h2 class="text-2xl font-black mb-6 uppercase italic">Current Games</h2>
+            <div id="games-list" class="flex flex-col gap-4">
+                <!-- Games will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const passcodeOverlay = document.getElementById('passcode-overlay');
+        const adminContent = document.getElementById('admin-content');
+        const codeInput = document.getElementById('admin-code-input');
+        const unlockBtn = document.getElementById('unlock-btn');
+
+        function checkAuth() {
+            if (sessionStorage.getItem('admin_auth') === 'true') {
+                passcodeOverlay.classList.add('hidden');
+                adminContent.classList.remove('hidden');
+                fetchGames();
+            }
+        }
+
+        unlockBtn.addEventListener('click', () => {
+            if (codeInput.value === '0011') {
+                sessionStorage.setItem('admin_auth', 'true');
+                checkAuth();
+            } else {
+                alert('WRONG CODE! TRY AGAIN!');
+                codeInput.value = '';
+            }
+        });
+
+        codeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') unlockBtn.click();
+        });
+
+        let games = [];
+
+        const form = document.getElementById('add-game-form');
+        const gamesList = document.getElementById('games-list');
+        const typeSelect = document.getElementById('game-type');
+        const urlContainer = document.getElementById('url-container');
+
+        typeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'internal') {
+                urlContainer.classList.add('hidden');
+            } else {
+                urlContainer.classList.remove('hidden');
+            }
+        });
+
+        async function fetchGames() {
+            const res = await fetch('/api/games');
+            games = await res.json();
+            renderGames();
+        }
+
+        function renderGames() {
+            gamesList.innerHTML = games.map((game, index) => `
+                <div class="bg-white comic-border rounded-2xl p-4 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <img src="${game.thumbnail}" class="w-16 h-10 object-cover rounded-lg comic-border" referrerpolicy="no-referrer">
+                        <div>
+                            <h3 class="font-bold uppercase italic">${game.title}</h3>
+                            <p class="text-xs opacity-60">${game.id} | ${game.type || 'iframe'}</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteGame(${index})" class="bg-red-500 text-white comic-border px-4 py-2 rounded-xl font-bold text-sm hover:bg-red-600 transition-all">DELETE</button>
+                </div>
+            `).join('');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newGame = {
+                id: document.getElementById('game-id').value,
+                title: document.getElementById('game-title').value,
+                thumbnail: document.getElementById('game-thumb').value,
+                type: document.getElementById('game-type').value
+            };
+            if (newGame.type === 'iframe') {
+                newGame.iframeUrl = document.getElementById('game-url').value;
+            }
+
+            games.push(newGame);
+            await saveGames();
+            form.reset();
+            urlContainer.classList.remove('hidden');
+        });
+
+        async function deleteGame(index) {
+            if (confirm('Are you sure you want to delete this game?')) {
+                games.splice(index, 1);
+                await saveGames();
+            }
+        }
+
+        async function saveGames() {
+            const res = await fetch('/api/games', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(games)
+            });
+            if (res.ok) {
+                renderGames();
+            } else {
+                alert('Failed to save games!');
+            }
+        }
+
+        checkAuth();
+    </script>
+</body>
+</html>

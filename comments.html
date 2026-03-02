@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat & Comments - Starlight Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Fredoka', sans-serif; }
+        .comic-border { border: 4px solid #000; }
+        .comic-shadow-sm { box-shadow: 4px 4px 0px #000; }
+        .comic-shadow { box-shadow: 8px 8px 0px #000; }
+        .selection-yellow::selection { background: #facc15; color: #000; }
+    </style>
+</head>
+<body class="bg-[#9333ea] text-zinc-950 min-h-screen p-4 sm:p-8 selection-yellow">
+    <div class="max-w-3xl mx-auto">
+        <header class="flex items-center justify-between mb-12">
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-4xl font-black text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase italic hover:scale-105 transition-transform">STARLIGHT</a>
+            </div>
+            <a href="/" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-bold comic-shadow-sm hover:translate-x-1 transition-all">BACK TO GAMES</a>
+        </header>
+
+        <div class="bg-white comic-border rounded-[2rem] p-8 comic-shadow mb-12">
+            <h2 class="text-3xl font-black mb-6 uppercase italic">COMMUNITY CHAT</h2>
+            <p class="font-bold mb-8 opacity-70">SHARE YOUR HIGH SCORES AND TIPS!</p>
+            
+            <form id="comment-form" class="flex flex-col gap-4 mb-12">
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold uppercase text-sm">Username</label>
+                    <input type="text" id="username" required class="comic-border rounded-xl p-3 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30" placeholder="Your cool gamer name...">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold uppercase text-sm">Message</label>
+                    <textarea id="message" required class="comic-border rounded-xl p-3 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30 min-h-[100px]" placeholder="Type something awesome..."></textarea>
+                </div>
+                <button type="submit" class="bg-[#ff4499] text-white comic-border rounded-2xl py-4 font-black text-xl comic-shadow-sm hover:bg-[#ee3388] transition-all uppercase italic">POST MESSAGE!</button>
+            </form>
+
+            <div id="comments-container" class="flex flex-col gap-6">
+                <!-- Comments will be loaded here -->
+                <div class="text-center py-10 opacity-50 font-bold">LOADING CHAT...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const commentForm = document.getElementById('comment-form');
+        const commentsContainer = document.getElementById('comments-container');
+        const usernameInput = document.getElementById('username');
+        const messageInput = document.getElementById('message');
+
+        // Load saved username
+        const savedUsername = localStorage.getItem('chat_username');
+        if (savedUsername) {
+            usernameInput.value = savedUsername;
+        }
+
+        async function fetchComments() {
+            try {
+                const res = await fetch('/api/comments');
+                const comments = await res.json();
+                renderComments(comments);
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+            }
+        }
+
+        function renderComments(comments) {
+            if (comments.length === 0) {
+                commentsContainer.innerHTML = '<div class="text-center py-10 opacity-50 font-bold">NO MESSAGES YET. BE THE FIRST!</div>';
+                return;
+            }
+
+            commentsContainer.innerHTML = comments.slice().reverse().map(comment => {
+                const date = new Date(comment.timestamp);
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateStr = date.toLocaleDateString();
+                
+                return `
+                    <div class="bg-[#facc15] comic-border rounded-2xl p-6 comic-shadow-sm">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="font-black uppercase italic text-lg">${escapeHtml(comment.username)}</span>
+                            <span class="text-xs font-bold opacity-60">${dateStr} @ ${timeStr}</span>
+                        </div>
+                        <p class="font-bold text-zinc-800 leading-relaxed">${escapeHtml(comment.text)}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        commentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = usernameInput.value.trim();
+            const text = messageInput.value.trim();
+
+            if (!username || !text) return;
+
+            // Save username for next time
+            localStorage.setItem('chat_username', username);
+
+            try {
+                const res = await fetch('/api/comments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, text })
+                });
+
+                if (res.ok) {
+                    messageInput.value = '';
+                    fetchComments();
+                } else {
+                    alert('Failed to post message!');
+                }
+            } catch (error) {
+                console.error('Error posting comment:', error);
+            }
+        });
+
+        // Initial fetch
+        fetchComments();
+
+        // Refresh comments every 10 seconds
+        setInterval(fetchComments, 10000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playing Game - Starlight Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Fredoka', sans-serif; margin: 0; padding: 0; overflow: hidden; background: #000; }
+        .comic-border { border: 4px solid #000; }
+        .comic-shadow-sm { box-shadow: 4px 4px 0px #000; }
+        #game-canvas { image-rendering: pixelated; }
+    </style>
+</head>
+<body class="bg-black h-screen w-screen flex items-center justify-center">
+    <div class="absolute top-4 right-4 z-50 flex gap-4">
+        <a href="/comments.html" class="bg-[#ff4499] comic-border px-6 py-2 rounded-xl font-black text-white comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">CHAT!</a>
+        <a href="/" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-black text-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">EXIT</a>
+    </div>
+    <iframe id="game-iframe" class="w-full h-full border-none hidden" allowfullscreen></iframe>
+    
+    <div id="internal-game-container" class="hidden w-full h-full flex items-center justify-center bg-[#1a1a1a]">
+        <canvas id="game-canvas" class="max-w-full max-h-full"></canvas>
+        <div id="game-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 hidden">
+            <h2 id="overlay-title" class="text-5xl font-black text-white mb-4 uppercase italic">GAME OVER</h2>
+            <p id="overlay-score" class="text-2xl font-bold text-[#facc15] mb-8 uppercase">SCORE: 0</p>
+            <button id="restart-btn" class="bg-[#ff4499] comic-border px-8 py-4 rounded-2xl font-black text-white comic-shadow-sm hover:bg-[#ee3388] transition-all uppercase italic">PLAY AGAIN!</button>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+    <script>
+        // Standalone mode for game.html
+        window.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameId = urlParams.get('id');
+            
+            if (!gameId) {
+                document.body.innerHTML = '<div class="text-white text-2xl font-black uppercase italic">No game selected!</div>';
+                return;
+            }
+
+            // Wait for games to load from script.js logic
+            // We need to make sure loadGames is called or we fetch manually
+            const response = await fetch('/api/games');
+            const gamesList = await response.json();
+            const game = gamesList.find(g => g.id === gameId);
+
+            if (!game) {
+                document.body.innerHTML = '<div class="text-white text-2xl font-black uppercase italic">Game not found!</div>';
+                return;
+            }
+
+            document.title = `${game.title} - Starlight Games`;
+
+            const iframe = document.getElementById('game-iframe');
+            const container = document.getElementById('internal-game-container');
+            const canvas = document.getElementById('game-canvas');
+
+            if (game.type === 'internal') {
+                container.classList.remove('hidden');
+                if (gameId === 'retro-snake') {
+                    // SnakeGame class is in script.js, so it should be available
+                    const snake = new SnakeGame(canvas);
+                    setTimeout(() => snake.start(), 100);
+                    document.getElementById('restart-btn').onclick = () => snake.reset();
+                }
+            } else {
+                iframe.classList.remove('hidden');
+                iframe.src = game.iframeUrl;
+            }
+        });
+    </script>
+</body>
+</html>

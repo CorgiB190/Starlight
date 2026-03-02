@@ -12,22 +12,28 @@ const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const currentGameTitle = document.getElementById('current-game-title');
 const playingStatus = document.getElementById('playing-status');
+const openTabBtn = document.getElementById('open-tab-btn');
 
+let currentGameId = null;
 let snakeGame = null;
 
 class SnakeGame {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.gridSize = 20;
+        this.gridSize = 35; // Thicker snake
+        this.cols = 18;     // Fixed smaller map width
+        this.rows = 12;     // Fixed smaller map height
         this.score = 0;
-        this.snake = [{ x: 10, y: 10 }];
-        this.food = { x: 15, y: 15 };
-        this.direction = { x: 0, y: 0 };
-        this.nextDirection = { x: 0, y: 0 };
+        this.snake = [];
+        this.food = { x: 5, y: 5 };
+        this.direction = { x: 1, y: 0 };
+        this.nextDirection = { x: 1, y: 0 };
         this.gameLoop = null;
         this.isGameOver = false;
         this.speed = 150;
+        this.offsetX = 0;
+        this.offsetY = 0;
 
         this.handleKeyDown = this.handleKeyDown.bind(this);
     }
@@ -35,7 +41,7 @@ class SnakeGame {
     start() {
         this.resize();
         this.reset();
-        this.draw(); // Initial draw
+        this.draw();
         window.addEventListener('keydown', this.handleKeyDown);
         this.resizeHandler = () => {
             this.resize();
@@ -52,7 +58,13 @@ class SnakeGame {
     }
 
     reset() {
-        this.snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+        const midX = Math.floor(this.cols / 2);
+        const midY = Math.floor(this.rows / 2);
+        this.snake = [
+            { x: midX, y: midY },
+            { x: midX - 1, y: midY },
+            { x: midX - 2, y: midY }
+        ];
         this.direction = { x: 1, y: 0 };
         this.nextDirection = { x: 1, y: 0 };
         this.score = 0;
@@ -60,7 +72,6 @@ class SnakeGame {
         this.speed = 150;
         this.spawnFood();
         gameOverlay.classList.add('hidden');
-        this.draw(); // Draw initial state
     }
 
     resize() {
@@ -76,8 +87,9 @@ class SnakeGame {
         
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         
-        this.cols = Math.floor(width / this.gridSize);
-        this.rows = Math.floor(height / this.gridSize);
+        // Calculate offsets to center the fixed-size grid
+        this.offsetX = Math.floor((width - (this.cols * this.gridSize)) / 2);
+        this.offsetY = Math.floor((height - (this.rows * this.gridSize)) / 2);
     }
 
     spawnFood() {
@@ -85,7 +97,6 @@ class SnakeGame {
             x: Math.floor(Math.random() * this.cols),
             y: Math.floor(Math.random() * this.rows)
         };
-        // Don't spawn food on snake
         if (this.snake.some(segment => segment.x === this.food.x && segment.y === this.food.y)) {
             this.spawnFood();
         }
@@ -109,13 +120,11 @@ class SnakeGame {
         this.direction = this.nextDirection;
         const head = { x: this.snake[0].x + this.direction.x, y: this.snake[0].y + this.direction.y };
 
-        // Wall collision
         if (head.x < 0 || head.x >= this.cols || head.y < 0 || head.y >= this.rows) {
             this.gameOver();
             return;
         }
 
-        // Self collision
         if (this.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
             this.gameOver();
             return;
@@ -123,11 +132,9 @@ class SnakeGame {
 
         this.snake.unshift(head);
 
-        // Food collision
         if (head.x === this.food.x && head.y === this.food.y) {
             this.score += 10;
             this.spawnFood();
-            // Speed up slightly
             if (this.speed > 60) {
                 clearInterval(this.gameLoop);
                 this.speed -= 2;
@@ -145,16 +152,36 @@ class SnakeGame {
         const width = this.canvas.width / dpr;
         const height = this.canvas.height / dpr;
         
+        // Background
         this.ctx.fillStyle = '#1a1a1a';
         this.ctx.fillRect(0, 0, width, height);
+
+        // Draw Map Border
+        this.ctx.strokeStyle = '#facc15';
+        this.ctx.lineWidth = 4;
+        this.ctx.strokeRect(
+            this.offsetX - 2, 
+            this.offsetY - 2, 
+            (this.cols * this.gridSize) + 4, 
+            (this.rows * this.gridSize) + 4
+        );
+
+        // Draw Map Background
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillRect(
+            this.offsetX, 
+            this.offsetY, 
+            this.cols * this.gridSize, 
+            this.rows * this.gridSize
+        );
 
         // Draw food
         this.ctx.fillStyle = '#ff4499';
         this.ctx.beginPath();
         this.ctx.arc(
-            this.food.x * this.gridSize + this.gridSize / 2,
-            this.food.y * this.gridSize + this.gridSize / 2,
-            this.gridSize / 2 - 2,
+            this.offsetX + this.food.x * this.gridSize + this.gridSize / 2,
+            this.offsetY + this.food.y * this.gridSize + this.gridSize / 2,
+            this.gridSize / 2 - 4,
             0, Math.PI * 2
         );
         this.ctx.fill();
@@ -168,29 +195,29 @@ class SnakeGame {
             this.ctx.strokeStyle = '#000';
             this.ctx.lineWidth = 2;
             
-            const x = segment.x * this.gridSize;
-            const y = segment.y * this.gridSize;
+            const x = this.offsetX + segment.x * this.gridSize;
+            const y = this.offsetY + segment.y * this.gridSize;
             const size = this.gridSize - 2;
 
             this.ctx.fillRect(x + 1, y + 1, size, size);
             this.ctx.strokeRect(x + 1, y + 1, size, size);
 
-            // Eyes for head
             if (index === 0) {
                 this.ctx.fillStyle = '#000';
-                const eyeSize = 3;
+                const eyeSize = 4;
+                const eyeOffset = this.gridSize / 4;
                 if (this.direction.x === 1) {
-                    this.ctx.fillRect(x + 12, y + 5, eyeSize, eyeSize);
-                    this.ctx.fillRect(x + 12, y + 12, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + this.gridSize - 10, y + eyeOffset, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + this.gridSize - 10, y + this.gridSize - eyeOffset - eyeSize, eyeSize, eyeSize);
                 } else if (this.direction.x === -1) {
-                    this.ctx.fillRect(x + 5, y + 5, eyeSize, eyeSize);
-                    this.ctx.fillRect(x + 5, y + 12, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + 6, y + eyeOffset, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + 6, y + this.gridSize - eyeOffset - eyeSize, eyeSize, eyeSize);
                 } else if (this.direction.y === 1) {
-                    this.ctx.fillRect(x + 5, y + 12, eyeSize, eyeSize);
-                    this.ctx.fillRect(x + 12, y + 12, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + eyeOffset, y + this.gridSize - 10, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + this.gridSize - eyeOffset - eyeSize, y + this.gridSize - 10, eyeSize, eyeSize);
                 } else {
-                    this.ctx.fillRect(x + 5, y + 5, eyeSize, eyeSize);
-                    this.ctx.fillRect(x + 12, y + 5, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + eyeOffset, y + 6, eyeSize, eyeSize);
+                    this.ctx.fillRect(x + this.gridSize - eyeOffset - eyeSize, y + 6, eyeSize, eyeSize);
                 }
             }
         });
@@ -206,7 +233,7 @@ class SnakeGame {
 // Load games from JSON
 async function loadGames() {
     try {
-        const response = await fetch('./src/games.json');
+        const response = await fetch('/api/games');
         games = await response.json();
         renderGames();
     } catch (error) {
@@ -242,12 +269,13 @@ function playGame(gameId) {
     const game = games.find(g => g.id === gameId);
     if (!game) return;
 
-    currentGameTitle.textContent = game.title;
-    playingStatus.textContent = `Playing ${game.title}`;
+    currentGameId = gameId;
+    if (currentGameTitle) currentGameTitle.textContent = game.title;
+    if (playingStatus) playingStatus.textContent = `Playing ${game.title}`;
 
     if (game.type === 'internal') {
-        gameIframe.classList.add('hidden');
-        internalGameContainer.classList.remove('hidden');
+        if (gameIframe) gameIframe.classList.add('hidden');
+        if (internalGameContainer) internalGameContainer.classList.remove('hidden');
         if (gameId === 'retro-snake') {
             if (snakeGame) snakeGame.stop();
             snakeGame = new SnakeGame(gameCanvas);
@@ -255,38 +283,53 @@ function playGame(gameId) {
             setTimeout(() => snakeGame.start(), 50);
         }
     } else {
-        internalGameContainer.classList.add('hidden');
-        gameIframe.classList.remove('hidden');
-        gameIframe.src = game.iframeUrl;
+        if (internalGameContainer) internalGameContainer.classList.add('hidden');
+        if (gameIframe) {
+            gameIframe.classList.remove('hidden');
+            gameIframe.src = game.iframeUrl;
+        }
     }
 
-    gridView.classList.add('hidden');
-    playerView.classList.remove('hidden');
+    if (gridView) gridView.classList.add('hidden');
+    if (playerView) playerView.classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function closePlayer() {
-    gameIframe.src = '';
+    if (gameIframe) gameIframe.src = '';
     if (snakeGame) {
         snakeGame.stop();
         snakeGame = null;
     }
-    playerView.classList.add('hidden');
-    gridView.classList.remove('hidden');
+    if (playerView) playerView.classList.add('hidden');
+    if (gridView) gridView.classList.remove('hidden');
+    currentGameId = null;
 }
 
 // Event Listeners
-searchInput.addEventListener('input', (e) => {
-    searchQuery = e.target.value;
-    renderGames();
-});
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        renderGames();
+    });
+}
 
-document.getElementById('back-btn').addEventListener('click', closePlayer);
-document.getElementById('close-btn').addEventListener('click', closePlayer);
-document.getElementById('logo').addEventListener('click', closePlayer);
-restartBtn.addEventListener('click', () => {
-    if (snakeGame) snakeGame.reset();
-});
+if (document.getElementById('back-btn')) document.getElementById('back-btn').addEventListener('click', closePlayer);
+if (document.getElementById('close-btn')) document.getElementById('close-btn').addEventListener('click', closePlayer);
+if (document.getElementById('logo')) document.getElementById('logo').addEventListener('click', closePlayer);
+if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+        if (snakeGame) snakeGame.reset();
+    });
+}
+
+if (openTabBtn) {
+    openTabBtn.addEventListener('click', () => {
+        if (currentGameId) {
+            window.open(`./game.html?id=${currentGameId}`, '_blank');
+        }
+    });
+}
 
 const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -298,8 +341,10 @@ const toggleFullscreen = () => {
     }
 };
 
-document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
-document.getElementById('player-fullscreen-btn').addEventListener('click', toggleFullscreen);
+if (document.getElementById('fullscreen-btn')) document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+if (document.getElementById('player-fullscreen-btn')) document.getElementById('player-fullscreen-btn').addEventListener('click', toggleFullscreen);
 
 // Initial Load
-loadGames();
+if (gridView) {
+    loadGames();
+}
