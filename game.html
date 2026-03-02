@@ -3,30 +3,63 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Playing Game - Starlight Games</title>
+    <title>Playing Game - Jupiter Games</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
     <style>
-        body { font-family: 'Fredoka', sans-serif; margin: 0; padding: 0; overflow: hidden; background: #000; }
-        .comic-border { border: 4px solid #000; }
-        .comic-shadow-sm { box-shadow: 4px 4px 0px #000; }
+        body { 
+            font-family: 'Fredoka', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        }
+        
+        /* Starfield Background */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .comic-border { border: 4px solid #fff; }
+        .comic-shadow-sm { box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2); }
         #game-canvas { image-rendering: pixelated; }
+        .glow-border { box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
     </style>
 </head>
-<body class="bg-black h-screen w-screen flex items-center justify-center">
+<body class="h-screen w-screen flex items-center justify-center">
+    <!-- Starfield -->
+    <div class="stars-container" id="stars-container"></div>
+
     <div class="absolute top-4 right-4 z-50 flex gap-4">
-        <a href="/soundboard.html" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-black text-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">SOUNDS!</a>
-        <a href="/comments.html" class="bg-[#ff4499] comic-border px-6 py-2 rounded-xl font-black text-white comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">CHAT!</a>
-        <a href="/" class="bg-[#facc15] comic-border px-6 py-2 rounded-xl font-black text-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">EXIT</a>
+        <a href="/" class="bg-purple-600 border-4 border-white/20 px-6 py-2 rounded-xl font-black text-white hover:bg-purple-500 transition-all uppercase italic text-sm glow-border">EXIT</a>
     </div>
     <iframe id="game-iframe" class="w-full h-full border-none hidden" allowfullscreen></iframe>
     
-    <div id="internal-game-container" class="hidden w-full h-full flex items-center justify-center bg-[#1a1a1a]">
-        <canvas id="game-canvas" class="max-w-full max-h-full"></canvas>
+    <div id="internal-game-container" class="hidden w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-md">
+        <canvas id="game-canvas" class="max-w-full max-h-full glow-border border-4 border-white/20"></canvas>
         <div id="game-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 hidden">
             <h2 id="overlay-title" class="text-5xl font-black text-white mb-4 uppercase italic">GAME OVER</h2>
-            <p id="overlay-score" class="text-2xl font-bold text-[#facc15] mb-8 uppercase">SCORE: 0</p>
-            <button id="restart-btn" class="bg-[#ff4499] comic-border px-8 py-4 rounded-2xl font-black text-white comic-shadow-sm hover:bg-[#ee3388] transition-all uppercase italic">PLAY AGAIN!</button>
+            <p id="overlay-score" class="text-2xl font-bold text-purple-400 mb-8 uppercase">SCORE: 0</p>
+            <button id="restart-btn" class="bg-purple-600 border-4 border-white/20 px-8 py-4 rounded-2xl font-black text-white hover:bg-purple-500 transition-all uppercase italic">PLAY AGAIN!</button>
         </div>
     </div>
 
@@ -53,7 +86,7 @@
                 return;
             }
 
-            document.title = `${game.title} - Starlight Games`;
+            document.title = `${game.title} - Jupiter Games`;
 
             const iframe = document.getElementById('game-iframe');
             const container = document.getElementById('internal-game-container');
@@ -66,10 +99,30 @@
                     const snake = new SnakeGame(canvas);
                     setTimeout(() => snake.start(), 100);
                     document.getElementById('restart-btn').onclick = () => snake.reset();
+                } else if (gameId === 'atari-breakout') {
+                    const breakout = new BreakoutGame(canvas);
+                    setTimeout(() => breakout.start(), 100);
+                    document.getElementById('restart-btn').onclick = () => breakout.reset();
                 }
             } else {
                 iframe.classList.remove('hidden');
                 iframe.src = game.iframeUrl;
+            }
+
+            // Init stars for game page too
+            const starsContainer = document.getElementById('stars-container');
+            const count = 100;
+            for (let i = 0; i < count; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 3;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--duration', `${2 + Math.random() * 4}s`);
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                starsContainer.appendChild(star);
             }
         });
     </script>

@@ -1,9 +1,11 @@
 let games = [];
 let searchQuery = '';
+let currentCategory = 'All';
 
 const gridView = document.getElementById('grid-view');
 const playerView = document.getElementById('player-view');
 const searchInput = document.getElementById('search-input');
+const categoryBtns = document.querySelectorAll('.category-btn');
 const gameIframe = document.getElementById('game-iframe');
 const internalGameContainer = document.getElementById('internal-game-container');
 const gameCanvas = document.getElementById('game-canvas');
@@ -16,6 +18,248 @@ const openTabBtn = document.getElementById('open-tab-btn');
 
 let currentGameId = null;
 let snakeGame = null;
+let breakoutGame = null;
+
+class BreakoutGame {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.score = 0;
+        this.isGameOver = false;
+        this.isStarted = false;
+        this.gameLoop = null;
+        
+        // Paddle
+        this.paddleHeight = 15;
+        this.paddleWidth = 100;
+        this.paddleX = 0;
+        
+        // Ball
+        this.ballRadius = 8;
+        this.x = 0;
+        this.y = 0;
+        this.dx = 4;
+        this.dy = -4;
+        
+        // Bricks
+        this.brickRowCount = 5;
+        this.brickColumnCount = 8;
+        this.brickWidth = 75;
+        this.brickHeight = 20;
+        this.brickPadding = 10;
+        this.brickOffsetTop = 50;
+        this.brickOffsetLeft = 30;
+        this.bricks = [];
+        
+        this.rightPressed = false;
+        this.leftPressed = false;
+        
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleKeyUp = this.handleKeyUp.bind(this);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+    }
+
+    start() {
+        this.resize();
+        this.reset();
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('keyup', this.handleKeyUp);
+        window.addEventListener('mousemove', this.handleMouseMove);
+        
+        // Show start screen
+        this.isStarted = false;
+        gameOverlay.classList.remove('hidden');
+        document.getElementById('overlay-title').textContent = "ATARI BREAKOUT";
+        overlayScore.textContent = "DESTROY ALL BRICKS!";
+        restartBtn.textContent = "PLAY GAME!";
+        
+        this.draw();
+    }
+
+    begin() {
+        this.isStarted = true;
+        gameOverlay.classList.add('hidden');
+        restartBtn.textContent = "PLAY AGAIN!";
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    }
+
+    stop() {
+        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('keyup', this.handleKeyUp);
+        window.removeEventListener('mousemove', this.handleMouseMove);
+    }
+
+    reset() {
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        
+        this.paddleX = (width - this.paddleWidth) / 2;
+        this.x = width / 2;
+        this.y = height - 30;
+        this.dx = 4;
+        this.dy = -4;
+        this.score = 0;
+        this.isGameOver = false;
+        
+        this.bricks = [];
+        for (let c = 0; c < this.brickColumnCount; c++) {
+            this.bricks[c] = [];
+            for (let r = 0; r < this.brickRowCount; r++) {
+                this.bricks[c][r] = { x: 0, y: 0, status: 1 };
+            }
+        }
+        gameOverlay.classList.add('hidden');
+    }
+
+    resize() {
+        const container = this.canvas.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        const width = container.clientWidth || 800;
+        const height = container.clientHeight || 450;
+        
+        this.canvas.width = width * dpr;
+        this.canvas.height = height * dpr;
+        this.canvas.style.width = `${width}px`;
+        this.canvas.style.height = `${height}px`;
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // Adjust brick width based on canvas width
+        const availableWidth = width - (this.brickOffsetLeft * 2);
+        this.brickWidth = (availableWidth - (this.brickPadding * (this.brickColumnCount - 1))) / this.brickColumnCount;
+    }
+
+    handleKeyDown(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") this.rightPressed = true;
+        else if (e.key === "Left" || e.key === "ArrowLeft") this.leftPressed = true;
+    }
+
+    handleKeyUp(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") this.rightPressed = false;
+        else if (e.key === "Left" || e.key === "ArrowLeft") this.leftPressed = false;
+    }
+
+    handleMouseMove(e) {
+        const relativeX = e.clientX - this.canvas.getBoundingClientRect().left;
+        if (relativeX > 0 && relativeX < this.canvas.width / (window.devicePixelRatio || 1)) {
+            this.paddleX = relativeX - this.paddleWidth / 2;
+        }
+    }
+
+    collisionDetection() {
+        for (let c = 0; c < this.brickColumnCount; c++) {
+            for (let r = 0; r < this.brickRowCount; r++) {
+                const b = this.bricks[c][r];
+                if (b.status === 1) {
+                    if (this.x > b.x && this.x < b.x + this.brickWidth && this.y > b.y && this.y < b.y + this.brickHeight) {
+                        this.dy = -this.dy;
+                        b.status = 0;
+                        this.score += 10;
+                        if (this.score === this.brickRowCount * this.brickColumnCount * 10) {
+                            this.gameOver(true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    update() {
+        if (this.isGameOver || !this.isStarted) return;
+
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+
+        if (this.x + this.dx > width - this.ballRadius || this.x + this.dx < this.ballRadius) {
+            this.dx = -this.dx;
+        }
+        if (this.y + this.dy < this.ballRadius) {
+            this.dy = -this.dy;
+        } else if (this.y + this.dy > height - this.paddleHeight - 10 - this.ballRadius) {
+            if (this.x > this.paddleX && this.x < this.paddleX + this.paddleWidth) {
+                if (this.dy > 0) {
+                    this.dy = -this.dy;
+                    // Add some variety to bounce
+                    this.dx = 8 * ((this.x - (this.paddleX + this.paddleWidth / 2)) / this.paddleWidth);
+                    // Snap ball to top of paddle to prevent phasing
+                    this.y = height - this.paddleHeight - 10 - this.ballRadius;
+                }
+            } else if (this.y + this.dy > height - this.ballRadius) {
+                this.gameOver(false);
+                return;
+            }
+        }
+
+        if (this.rightPressed && this.paddleX < width - this.paddleWidth) {
+            this.paddleX += 7;
+        } else if (this.leftPressed && this.paddleX > 0) {
+            this.paddleX -= 7;
+        }
+
+        this.x += this.dx;
+        this.y += this.dy;
+
+        this.collisionDetection();
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    }
+
+    draw() {
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        
+        this.ctx.clearRect(0, 0, width, height);
+        
+        // Background
+        this.ctx.fillStyle = '#050505';
+        this.ctx.fillRect(0, 0, width, height);
+
+        // Bricks
+        const colors = ['#ff4444', '#ff8844', '#ffff44', '#44ff44', '#4444ff'];
+        for (let c = 0; c < this.brickColumnCount; c++) {
+            for (let r = 0; r < this.brickRowCount; r++) {
+                if (this.bricks[c][r].status === 1) {
+                    const brickX = c * (this.brickWidth + this.brickPadding) + this.brickOffsetLeft;
+                    const brickY = r * (this.brickHeight + this.brickPadding) + this.brickOffsetTop;
+                    this.bricks[c][r].x = brickX;
+                    this.bricks[c][r].y = brickY;
+                    this.ctx.beginPath();
+                    this.ctx.rect(brickX, brickY, this.brickWidth, this.brickHeight);
+                    this.ctx.fillStyle = colors[r % colors.length];
+                    this.ctx.fill();
+                    this.ctx.closePath();
+                }
+            }
+        }
+
+        // Ball
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.ballRadius, 0, Math.PI * 2);
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.fill();
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = "#ffffff";
+        this.ctx.closePath();
+        this.ctx.shadowBlur = 0;
+
+        // Paddle
+        this.ctx.beginPath();
+        this.ctx.rect(this.paddleX, height - this.paddleHeight - 10, this.paddleWidth, this.paddleHeight);
+        this.ctx.fillStyle = "#a855f7";
+        this.ctx.fill();
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = "#a855f7";
+        this.ctx.closePath();
+        this.ctx.shadowBlur = 0;
+    }
+
+    gameOver(win) {
+        this.isGameOver = true;
+        gameOverlay.classList.remove('hidden');
+        document.getElementById('overlay-title').textContent = win ? "YOU WIN!" : "GAME OVER";
+        overlayScore.textContent = `SCORE: ${this.score}`;
+    }
+}
 
 class SnakeGame {
     constructor(canvas) {
@@ -157,7 +401,7 @@ class SnakeGame {
         this.ctx.fillRect(0, 0, width, height);
 
         // Draw Map Border
-        this.ctx.strokeStyle = '#facc15';
+        this.ctx.strokeStyle = '#a855f7';
         this.ctx.lineWidth = 4;
         this.ctx.strokeRect(
             this.offsetX - 2, 
@@ -167,7 +411,7 @@ class SnakeGame {
         );
 
         // Draw Map Background
-        this.ctx.fillStyle = '#000000';
+        this.ctx.fillStyle = '#050505';
         this.ctx.fillRect(
             this.offsetX, 
             this.offsetY, 
@@ -176,7 +420,7 @@ class SnakeGame {
         );
 
         // Draw food
-        this.ctx.fillStyle = '#ff4499';
+        this.ctx.fillStyle = '#facc15';
         this.ctx.beginPath();
         this.ctx.arc(
             this.offsetX + this.food.x * this.gridSize + this.gridSize / 2,
@@ -185,13 +429,14 @@ class SnakeGame {
             0, Math.PI * 2
         );
         this.ctx.fill();
-        this.ctx.strokeStyle = '#000';
-        this.ctx.lineWidth = 2;
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = '#facc15';
         this.ctx.stroke();
+        this.ctx.shadowBlur = 0;
 
         // Draw snake
         this.snake.forEach((segment, index) => {
-            this.ctx.fillStyle = index === 0 ? '#facc15' : '#ffffff';
+            this.ctx.fillStyle = index === 0 ? '#a855f7' : '#ffffff';
             this.ctx.strokeStyle = '#000';
             this.ctx.lineWidth = 2;
             
@@ -199,8 +444,13 @@ class SnakeGame {
             const y = this.offsetY + segment.y * this.gridSize;
             const size = this.gridSize - 2;
 
+            if (index === 0) {
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = '#a855f7';
+            }
             this.ctx.fillRect(x + 1, y + 1, size, size);
             this.ctx.strokeRect(x + 1, y + 1, size, size);
+            this.ctx.shadowBlur = 0;
 
             if (index === 0) {
                 this.ctx.fillStyle = '#000';
@@ -242,26 +492,34 @@ async function loadGames() {
 }
 
 function renderGames() {
-    const filtered = games.filter(game => 
-        game.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filtered = games.filter(game => {
+        const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = currentCategory === 'All' || game.category === currentCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     gridView.innerHTML = filtered.map(game => `
-        <div class="game-card group cursor-pointer bg-white comic-border rounded-[2rem] overflow-hidden transition-all comic-shadow" onclick="playGame('${game.id}')">
-            <div class="aspect-video relative overflow-hidden border-b-4 border-black">
+        <div class="game-card group cursor-pointer bg-black/40 backdrop-blur-md border-4 border-white/20 rounded-[2rem] overflow-hidden transition-all hover:border-purple-500 hover:glow-border" onclick="playGame('${game.id}')">
+            <div class="aspect-video relative overflow-hidden border-b-4 border-white/20">
                 <img src="${game.thumbnail}" alt="${game.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerpolicy="no-referrer">
-                <div class="play-overlay absolute inset-0 bg-[#ff4499]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span class="text-xl font-black bg-white comic-border text-black px-6 py-2 rounded-2xl comic-shadow-sm uppercase italic">Play!</span>
+                <div class="play-overlay absolute inset-0 bg-purple-600/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="text-xl font-black bg-white text-black px-6 py-2 rounded-2xl uppercase italic glow-border">Play!</span>
+                </div>
+                <div class="absolute top-4 left-4">
+                    <span class="bg-purple-600 border-2 border-white/40 text-white px-3 py-1 rounded-xl text-xs font-black uppercase italic">${game.category || 'Game'}</span>
                 </div>
             </div>
-            <div class="p-6 bg-[#facc15]">
-                <h3 class="font-black text-xl uppercase italic group-hover:text-[#ff4499] transition-colors">${game.title}</h3>
+            <div class="p-6">
+                <h3 class="font-black text-xl uppercase italic group-hover:text-purple-400 transition-colors text-white">${game.title}</h3>
             </div>
         </div>
     `).join('');
 
     if (filtered.length === 0) {
-        gridView.innerHTML = `<div class="col-span-full py-20 text-center text-zinc-500"><p class="text-lg">No games found matching "${searchQuery}"</p></div>`;
+        const msg = currentCategory === 'All' 
+            ? `No games found matching "${searchQuery}"` 
+            : `No ${currentCategory} games found matching "${searchQuery}"`;
+        gridView.innerHTML = `<div class="col-span-full py-20 text-center text-white/40"><p class="text-lg">${msg}</p></div>`;
     }
 }
 
@@ -279,8 +537,11 @@ function playGame(gameId) {
         if (gameId === 'retro-snake') {
             if (snakeGame) snakeGame.stop();
             snakeGame = new SnakeGame(gameCanvas);
-            // Give the browser a moment to calculate dimensions
             setTimeout(() => snakeGame.start(), 50);
+        } else if (gameId === 'atari-breakout') {
+            if (breakoutGame) breakoutGame.stop();
+            breakoutGame = new BreakoutGame(gameCanvas);
+            setTimeout(() => breakoutGame.start(), 50);
         }
     } else {
         if (internalGameContainer) internalGameContainer.classList.add('hidden');
@@ -301,6 +562,10 @@ function closePlayer() {
         snakeGame.stop();
         snakeGame = null;
     }
+    if (breakoutGame) {
+        breakoutGame.stop();
+        breakoutGame = null;
+    }
     if (playerView) playerView.classList.add('hidden');
     if (gridView) gridView.classList.remove('hidden');
     currentGameId = null;
@@ -314,12 +579,31 @@ if (searchInput) {
     });
 }
 
+if (categoryBtns) {
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            categoryBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCategory = btn.dataset.category;
+            renderGames();
+        });
+    });
+}
+
 if (document.getElementById('back-btn')) document.getElementById('back-btn').addEventListener('click', closePlayer);
 if (document.getElementById('close-btn')) document.getElementById('close-btn').addEventListener('click', closePlayer);
 if (document.getElementById('logo')) document.getElementById('logo').addEventListener('click', closePlayer);
 if (restartBtn) {
     restartBtn.addEventListener('click', () => {
         if (snakeGame) snakeGame.reset();
+        if (breakoutGame) {
+            if (!breakoutGame.isStarted) {
+                breakoutGame.begin();
+            } else {
+                breakoutGame.reset();
+                breakoutGame.begin();
+            }
+        }
     });
 }
 
@@ -347,26 +631,28 @@ if (document.getElementById('player-fullscreen-btn')) document.getElementById('p
 // Initial Load
 if (gridView) {
     loadGames();
+    initStars();
+}
+
+function initStars() {
+    const container = document.getElementById('stars-container');
+    if (!container) return;
+    
+    const count = 150;
+    for (let i = 0; i < count; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 3;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.setProperty('--duration', `${2 + Math.random() * 4}s`);
+        star.style.animationDelay = `${Math.random() * 5}s`;
+        container.appendChild(star);
+    }
 }
 
 window.SnakeGame = SnakeGame;
-
-// Secret Admin Access: Click logo 5 times
-let logoClicks = 0;
-let logoClickTimeout;
-const logo = document.getElementById('logo');
-if (logo) {
-    logo.addEventListener('click', () => {
-        logoClicks++;
-        clearTimeout(logoClickTimeout);
-        
-        if (logoClicks >= 5) {
-            window.location.href = '/admin.html';
-            logoClicks = 0;
-        } else {
-            logoClickTimeout = setTimeout(() => {
-                logoClicks = 0;
-            }, 2000);
-        }
-    });
-}
+window.BreakoutGame = BreakoutGame;
+window.playGame = playGame;

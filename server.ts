@@ -8,7 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const GAMES_FILE = path.join(__dirname, "src", "games.json");
-const COMMENTS_FILE = path.join(__dirname, "src", "comments.json");
 
 async function startServer() {
   const app = express();
@@ -28,21 +27,38 @@ async function startServer() {
           "id": "stickman-parkour",
           "title": "Stickman Parkour",
           "thumbnail": "https://picsum.photos/seed/stickman/400/250",
-          "iframeUrl": "https://d11jzht7mj96rr.cloudfront.net/games/2024/construct/219/stickman-parkour/index-gg.html"
+          "iframeUrl": "https://d11jzht7mj96rr.cloudfront.net/games/2024/construct/219/stickman-parkour/index-gg.html",
+          "category": "Action"
         },
         {
           "id": "retro-snake",
           "title": "Retro Snake",
           "thumbnail": "https://picsum.photos/seed/snake/400/250",
-          "type": "internal"
+          "type": "internal",
+          "category": "Classic"
+        },
+        {
+          "id": "bitlife",
+          "title": "BitLife",
+          "thumbnail": "https://picsum.photos/seed/bitlife/400/250",
+          "iframeUrl": "https://macvg-games.github.io/strategy-games/bitlife/",
+          "category": "Simulation"
+        },
+        {
+          "id": "basketball-shoutout",
+          "title": "Basketball Shoutout",
+          "thumbnail": "https://picsum.photos/seed/basketball/400/250",
+          "iframeUrl": "https://app-197304.games.s3.yandex.net/197304/kj9rcykboy6eol5xnn250jesr7v0hoh1/index.html",
+          "category": "Sports"
+        },
+        {
+          "id": "atari-breakout",
+          "title": "Atari Breakout",
+          "thumbnail": "https://picsum.photos/seed/atari/400/250",
+          "iframeUrl": "/atari.html",
+          "category": "Classic"
         }
       ], null, 2));
-    }
-    // Initialize comments.json if it doesn't exist
-    try {
-      await fs.access(COMMENTS_FILE);
-    } catch {
-      await fs.writeFile(COMMENTS_FILE, JSON.stringify([], null, 2));
     }
   } catch (e) {
     console.error("Error initializing data directory:", e);
@@ -71,48 +87,6 @@ async function startServer() {
     }
   });
 
-  app.get("/api/comments", async (req, res) => {
-    try {
-      const data = await fs.readFile(COMMENTS_FILE, "utf-8");
-      res.json(JSON.parse(data));
-    } catch (error) {
-      res.json([]); // Return empty array if file doesn't exist
-    }
-  });
-
-  app.post("/api/comments", async (req, res) => {
-    try {
-      const { username, text } = req.body;
-      if (!username || !text) {
-        return res.status(400).json({ error: "Missing fields" });
-      }
-
-      let comments = [];
-      try {
-        const data = await fs.readFile(COMMENTS_FILE, "utf-8");
-        comments = JSON.parse(data);
-      } catch (e) {
-        // File might not exist yet
-      }
-
-      const newComment = {
-        id: Date.now(),
-        username,
-        text,
-        timestamp: new Date().toISOString()
-      };
-
-      comments.push(newComment);
-      // Keep only last 100 comments
-      if (comments.length > 100) comments = comments.slice(-100);
-
-      await fs.writeFile(COMMENTS_FILE, JSON.stringify(comments, null, 2));
-      res.json(newComment);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to save comment" });
-    }
-  });
-
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -129,30 +103,16 @@ async function startServer() {
       } catch (e) { next(e); }
     });
     
-    app.get(["/admin", "/admin.html"], async (req, res, next) => {
-      try {
-        const html = await fs.readFile(path.resolve(__dirname, "admin.html"), "utf-8");
-        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
-      } catch (e) { next(e); }
-    });
-
-    app.get(["/comments", "/comments.html"], async (req, res, next) => {
-      try {
-        const html = await fs.readFile(path.resolve(__dirname, "comments.html"), "utf-8");
-        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
-      } catch (e) { next(e); }
-    });
-
-    app.get(["/soundboard", "/soundboard.html"], async (req, res, next) => {
-      try {
-        const html = await fs.readFile(path.resolve(__dirname, "soundboard.html"), "utf-8");
-        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
-      } catch (e) { next(e); }
-    });
-
     app.get(["/game", "/game.html"], async (req, res, next) => {
       try {
         const html = await fs.readFile(path.resolve(__dirname, "game.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
+
+    app.get(["/atari", "/atari.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "atari.html"), "utf-8");
         res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
       } catch (e) { next(e); }
     });
@@ -162,10 +122,8 @@ async function startServer() {
     
     // Handle routes without .html extension in production
     app.get("/", (req, res) => res.sendFile(path.join(__dirname, "dist", "index.html")));
-    app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "dist", "admin.html")));
-    app.get("/comments", (req, res) => res.sendFile(path.join(__dirname, "dist", "comments.html")));
-    app.get("/soundboard", (req, res) => res.sendFile(path.join(__dirname, "dist", "soundboard.html")));
     app.get("/game", (req, res) => res.sendFile(path.join(__dirname, "dist", "game.html")));
+    app.get("/atari", (req, res) => res.sendFile(path.join(__dirname, "dist", "atari.html")));
 
     // Catch-all for SPA-like behavior on index.html if needed, but we have specific routes above
     app.get("*", (req, res) => {

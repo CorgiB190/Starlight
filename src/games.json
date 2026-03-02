@@ -3,12 +3,35 @@
     "id": "stickman-parkour",
     "title": "Stickman Parkour",
     "thumbnail": "https://picsum.photos/seed/stickman/400/250",
-    "iframeUrl": "https://d11jzht7mj96rr.cloudfront.net/games/2024/construct/219/stickman-parkour/index-gg.html"
+    "iframeUrl": "https://d11jzht7mj96rr.cloudfront.net/games/2024/construct/219/stickman-parkour/index-gg.html",
+    "category": "Action"
   },
   {
     "id": "retro-snake",
     "title": "Retro Snake",
     "thumbnail": "https://picsum.photos/seed/snake/400/250",
-    "type": "internal"
+    "type": "internal",
+    "category": "Classic"
+  },
+  {
+    "id": "bitlife",
+    "title": "BitLife",
+    "thumbnail": "https://picsum.photos/seed/bitlife/400/250",
+    "iframeUrl": "https://macvg-games.github.io/strategy-games/bitlife/",
+    "category": "Simulation"
+  },
+  {
+    "id": "basketball-shoutout",
+    "title": "Basketball Shoutout",
+    "thumbnail": "https://picsum.photos/seed/basketball/400/250",
+    "iframeUrl": "https://app-197304.games.s3.yandex.net/197304/kj9rcykboy6eol5xnn250jesr7v0hoh1/index.html",
+    "category": "Sports"
+  },
+  {
+    "id": "atari-breakout",
+    "title": "Atari Breakout",
+    "thumbnail": "https://picsum.photos/seed/breakout/400/250",
+    "type": "internal",
+    "category": "Classic"
   }
 ]

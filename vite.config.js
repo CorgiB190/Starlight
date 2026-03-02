@@ -23,10 +23,8 @@ export default defineConfig(({mode}) => {
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
-          admin: path.resolve(__dirname, 'admin.html'),
           game: path.resolve(__dirname, 'game.html'),
-          comments: path.resolve(__dirname, 'comments.html'),
-          soundboard: path.resolve(__dirname, 'soundboard.html'),
+          atari: path.resolve(__dirname, 'atari.html'),
         },
       },
     },

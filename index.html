@@ -3,61 +3,103 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Starlight Games - Unblocked</title>
+    <title>Jupiter Games - Unblocked</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
     <style>
-        body { font-family: 'Fredoka', sans-serif; }
+        body { 
+            font-family: 'Fredoka', sans-serif; 
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            overflow-x: hidden;
+        }
+        
+        /* Starfield Background */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
         .game-card:hover .play-overlay { opacity: 1; }
         .selection-yellow::selection { background-color: rgba(254, 240, 138, 0.5); }
-        .comic-border { border: 4px solid #000; }
-        .comic-shadow { box-shadow: 8px 8px 0px #000; }
-        .comic-shadow-sm { box-shadow: 4px 4px 0px #000; }
-        .comic-shadow:hover { transform: translate(-2px, -2px); box-shadow: 10px 10px 0px #000; }
-        .comic-shadow:active { transform: translate(2px, 2px); box-shadow: 4px 4px 0px #000; }
+        
+        /* Galaxy Theme Adjustments */
+        .comic-border { border: 4px solid #fff; }
+        .comic-shadow { box-shadow: 8px 8px 0px rgba(255, 255, 255, 0.2); }
+        .comic-shadow-sm { box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2); }
+        .comic-shadow:hover { transform: translate(-2px, -2px); box-shadow: 10px 10px 0px rgba(255, 255, 255, 0.3); }
+        .comic-shadow:active { transform: translate(2px, 2px); box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.1); }
+        
         #game-canvas { image-rendering: pixelated; }
+        .category-btn.active { background-color: #a855f7; color: white; border-color: #fff; }
+        .category-btn:not(.active) { background-color: rgba(255, 255, 255, 0.1); color: white; border-color: rgba(255, 255, 255, 0.3); }
+        
+        /* Glowing effects */
+        .glow-text { text-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.4); }
+        .glow-border { box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
     </style>
 </head>
-<body class="bg-[#9333ea] text-zinc-950 min-h-screen selection-yellow">
+<body class="text-white min-h-screen selection-yellow">
+    <!-- Starfield -->
+    <div class="stars-container" id="stars-container"></div>
+
     <!-- Header -->
-    <header class="border-b-4 border-black bg-[#facc15] sticky top-0 z-40">
+    <header class="border-b-4 border-white/20 bg-black/40 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 cursor-pointer group" id="logo">
-                <div class="p-2 bg-[#ff4499] comic-border rounded-2xl group-hover:rotate-6 transition-transform comic-shadow-sm">
+                <div class="p-2 bg-purple-600 comic-border rounded-2xl group-hover:rotate-6 transition-transform glow-border">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-white"><line x1="6" x2="10" y1="12" y2="12"></line><line x1="8" x2="8" y1="10" y2="14"></line><line x1="15" x2="15.01" y1="13" y2="13"></line><line x1="18" x2="18.01" y1="11" y2="11"></line><rect width="20" height="12" x="2" y="6" rx="2"></rect></svg>
                 </div>
-                <h1 class="text-3xl font-black tracking-tight hidden sm:block uppercase italic">
-                    STARLIGHT<span class="text-[#ff4499]">GAMES</span>
+                <h1 class="text-3xl font-black tracking-tight hidden sm:block uppercase italic glow-text">
+                    JUPITER<span class="text-purple-400">GAMES</span>
                 </h1>
             </div>
 
             <div class="flex-1 max-w-md relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
                 <input
                     type="text"
                     id="search-input"
-                    placeholder="Find a fun game!"
-                    class="w-full bg-white comic-border rounded-3xl py-3 pl-12 pr-6 focus:outline-none focus:ring-4 focus:ring-[#ff4499]/30 transition-all text-lg font-bold placeholder:text-zinc-400"
+                    placeholder="Search the galaxy..."
+                    class="w-full bg-white/10 border-4 border-white/20 rounded-3xl py-3 pl-12 pr-6 focus:outline-none focus:border-purple-500 transition-all text-lg font-bold placeholder:text-white/40 text-white"
                 />
             </div>
 
             <div class="flex items-center gap-2">
-                <a href="/soundboard.html" class="flex items-center gap-2 bg-[#facc15] text-black comic-border px-6 py-3 rounded-2xl font-black text-sm comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-                    SOUNDS!
-                </a>
-                <a href="/comments.html" class="flex items-center gap-2 bg-[#ff4499] text-white comic-border px-6 py-3 rounded-2xl font-black text-sm comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    CHAT!
-                </a>
-                <button id="fullscreen-btn" class="p-3 bg-white comic-border rounded-2xl transition-all comic-shadow-sm hover:bg-zinc-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
+                <button id="fullscreen-btn" class="p-3 bg-white/10 border-4 border-white/20 rounded-2xl transition-all hover:bg-white/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
                 </button>
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-12">
+        <!-- Category Filters -->
+        <div id="category-filters" class="flex flex-wrap gap-4 mb-12 justify-center">
+            <button data-category="All" class="category-btn active comic-border px-6 py-2 rounded-xl font-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">ALL</button>
+            <button data-category="Action" class="category-btn comic-border px-6 py-2 rounded-xl font-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">ACTION</button>
+            <button data-category="Classic" class="category-btn comic-border px-6 py-2 rounded-xl font-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">CLASSIC</button>
+            <button data-category="Simulation" class="category-btn comic-border px-6 py-2 rounded-xl font-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">SIMULATION</button>
+            <button data-category="Sports" class="category-btn comic-border px-6 py-2 rounded-xl font-black comic-shadow-sm hover:translate-y-[-2px] transition-all uppercase italic text-sm">SPORTS</button>
+        </div>
+
         <!-- Grid View -->
         <div id="grid-view" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
             <!-- Games will be injected here -->
@@ -66,39 +108,39 @@
         <!-- Player View (Hidden by default) -->
         <div id="player-view" class="hidden flex flex-col gap-6">
             <div class="flex items-center justify-between">
-                <button id="back-btn" class="flex items-center gap-2 bg-white comic-border px-6 py-3 rounded-2xl font-bold comic-shadow-sm hover:bg-zinc-100 transition-all group">
+                <button id="back-btn" class="flex items-center gap-2 bg-white/10 border-4 border-white/20 px-6 py-3 rounded-2xl font-bold hover:bg-white/20 transition-all group text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"></path></svg>
                     <span>GO BACK!</span>
                 </button>
-                <h2 id="current-game-title" class="text-4xl font-black text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase italic"></h2>
-                <button id="close-btn" class="p-3 bg-[#ff4499] comic-border rounded-full comic-shadow-sm hover:bg-[#ee3388] transition-all">
+                <h2 id="current-game-title" class="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(168,85,247,0.8)] uppercase italic"></h2>
+                <button id="close-btn" class="p-3 bg-purple-600 border-4 border-white/20 rounded-full hover:bg-purple-500 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
                 </button>
             </div>
 
-            <div class="relative aspect-video w-full bg-black rounded-[2.5rem] overflow-hidden comic-border comic-shadow">
+            <div class="relative aspect-video w-full bg-black rounded-[2.5rem] overflow-hidden border-4 border-white/20 glow-border">
                 <iframe id="game-iframe" class="w-full h-full border-none" allowfullscreen></iframe>
                 <div id="internal-game-container" class="hidden w-full h-full flex items-center justify-center bg-[#1a1a1a]">
                     <canvas id="game-canvas" class="max-w-full max-h-full"></canvas>
                     <div id="game-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 hidden">
                         <h2 id="overlay-title" class="text-5xl font-black text-white mb-4 uppercase italic">GAME OVER</h2>
-                        <p id="overlay-score" class="text-2xl font-bold text-[#facc15] mb-8 uppercase">SCORE: 0</p>
-                        <button id="restart-btn" class="bg-[#ff4499] comic-border px-8 py-4 rounded-2xl font-black text-white comic-shadow-sm hover:bg-[#ee3388] transition-all uppercase italic">PLAY AGAIN!</button>
+                        <p id="overlay-score" class="text-2xl font-bold text-purple-400 mb-8 uppercase">SCORE: 0</p>
+                        <button id="restart-btn" class="bg-purple-600 border-4 border-white/20 px-8 py-4 rounded-2xl font-black text-white hover:bg-purple-500 transition-all uppercase italic">PLAY AGAIN!</button>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-[#facc15] comic-border rounded-[2rem] p-8 flex flex-col sm:flex-row items-center justify-between gap-6 comic-shadow">
+            <div class="bg-black/40 backdrop-blur-md border-4 border-white/20 rounded-[2rem] p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div>
-                    <h3 id="playing-status" class="text-2xl font-black mb-1 uppercase"></h3>
-                    <p class="text-zinc-800 font-bold">HAVE A BLAST PLAYING!</p>
+                    <h3 id="playing-status" class="text-2xl font-black mb-1 uppercase text-purple-400"></h3>
+                    <p class="text-white/60 font-bold">HAVE A BLAST PLAYING!</p>
                 </div>
                 <div class="flex gap-4">
-                    <button id="open-tab-btn" class="flex items-center gap-2 bg-white comic-border px-8 py-4 rounded-2xl transition-all comic-shadow-sm hover:bg-zinc-100 font-black uppercase">
+                    <button id="open-tab-btn" class="flex items-center gap-2 bg-white/10 border-4 border-white/20 px-8 py-4 rounded-2xl transition-all hover:bg-white/20 font-black uppercase text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                         OPEN IN TAB
                     </button>
-                    <button id="player-fullscreen-btn" class="flex items-center gap-2 bg-white comic-border px-8 py-4 rounded-2xl transition-all comic-shadow-sm hover:bg-zinc-100 font-black uppercase">
+                    <button id="player-fullscreen-btn" class="flex items-center gap-2 bg-white/10 border-4 border-white/20 px-8 py-4 rounded-2xl transition-all hover:bg-white/20 font-black uppercase text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
                         FULLSCREEN
                     </button>
@@ -107,13 +149,9 @@
         </div>
     </main>
 
-    <footer class="border-t-4 border-black bg-[#facc15] mt-24 py-12 text-center text-black font-black uppercase tracking-widest">
-        <p>© 2024 Starlight Games. All rights reserved.</p>
+    <footer class="border-t-4 border-white/20 bg-black/40 backdrop-blur-md mt-24 py-12 text-center text-white font-black uppercase tracking-widest">
+        <p>© 2024 Jupiter Games</p>
         <p class="mt-2 text-sm opacity-70 italic">Educational purposes only.</p>
-        <div class="mt-6 flex justify-center gap-6 text-xs opacity-50">
-            <a href="/soundboard.html" class="hover:opacity-100 transition-opacity">SOUNDBOARD</a>
-            <a href="/comments.html" class="hover:opacity-100 transition-opacity">COMMUNITY CHAT</a>
-        </div>
     </footer>
 
     <script type="module" src="./script.js"></script>
