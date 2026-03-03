@@ -25,6 +25,8 @@ export default defineConfig(({mode}) => {
           main: path.resolve(__dirname, 'index.html'),
           game: path.resolve(__dirname, 'game.html'),
           atari: path.resolve(__dirname, 'atari.html'),
+          dune: path.resolve(__dirname, 'dune.html'),
+          nebula: path.resolve(__dirname, 'nebula.html'),
         },
       },
     },

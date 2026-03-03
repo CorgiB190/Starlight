@@ -33,5 +33,26 @@
     "thumbnail": "https://picsum.photos/seed/breakout/400/250",
     "type": "internal",
     "category": "Classic"
+  },
+  {
+    "id": "ping-pong",
+    "title": "Ping Pong",
+    "thumbnail": "https://picsum.photos/seed/pingpong/400/250",
+    "type": "internal",
+    "category": "Classic"
+  },
+  {
+    "id": "dune-game",
+    "title": "Dune Dash",
+    "thumbnail": "https://picsum.photos/seed/dune/400/250",
+    "iframeUrl": "/dune.html",
+    "category": "Action"
+  },
+  {
+    "id": "snow-rider-3d",
+    "title": "Snow Rider 3D",
+    "thumbnail": "https://picsum.photos/seed/snowrider/400/250",
+    "iframeUrl": "/snow-rider.html",
+    "category": "Action"
   }
 ]

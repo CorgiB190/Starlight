@@ -57,6 +57,20 @@ async function startServer() {
           "thumbnail": "https://picsum.photos/seed/atari/400/250",
           "iframeUrl": "/atari.html",
           "category": "Classic"
+        },
+        {
+          "id": "dune-game",
+          "title": "Dune Dash",
+          "thumbnail": "https://picsum.photos/seed/dune/400/250",
+          "iframeUrl": "/dune.html",
+          "category": "Action"
+        },
+        {
+          "id": "snow-rider-3d",
+          "title": "Snow Rider 3D",
+          "thumbnail": "https://picsum.photos/seed/snowrider/400/250",
+          "iframeUrl": "/snow-rider.html",
+          "category": "Action"
         }
       ], null, 2));
     }
@@ -116,6 +130,20 @@ async function startServer() {
         res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
       } catch (e) { next(e); }
     });
+
+    app.get(["/dune", "/dune.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "dune.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
+
+    app.get(["/snow-rider", "/snow-rider.html"], async (req, res, next) => {
+      try {
+        const html = await fs.readFile(path.resolve(__dirname, "snow-rider.html"), "utf-8");
+        res.status(200).set({ "Content-Type": "text/html" }).end(await vite.transformIndexHtml(req.url, html));
+      } catch (e) { next(e); }
+    });
   } else {
     // Production: Serve static files from dist
     app.use(express.static("dist", { extensions: ["html"] }));
@@ -124,6 +152,8 @@ async function startServer() {
     app.get("/", (req, res) => res.sendFile(path.join(__dirname, "dist", "index.html")));
     app.get("/game", (req, res) => res.sendFile(path.join(__dirname, "dist", "game.html")));
     app.get("/atari", (req, res) => res.sendFile(path.join(__dirname, "dist", "atari.html")));
+    app.get("/dune", (req, res) => res.sendFile(path.join(__dirname, "dist", "dune.html")));
+    app.get("/snow-rider", (req, res) => res.sendFile(path.join(__dirname, "dist", "snow-rider.html")));
 
     // Catch-all for SPA-like behavior on index.html if needed, but we have specific routes above
     app.get("*", (req, res) => {

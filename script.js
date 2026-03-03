@@ -19,6 +19,259 @@ const openTabBtn = document.getElementById('open-tab-btn');
 let currentGameId = null;
 let snakeGame = null;
 let breakoutGame = null;
+let pingPongGame = null;
+
+class PingPongGame {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.score1 = 0;
+        this.score2 = 0;
+        this.isGameOver = false;
+        this.isStarted = false;
+        this.gameLoop = null;
+        this.mode = 'ai'; // 'ai' or '2p'
+        
+        // Paddles
+        this.paddleWidth = 15;
+        this.paddleHeight = 100;
+        this.paddle1Y = 0;
+        this.paddle2Y = 0;
+        this.paddleSpeed = 8;
+        
+        // Ball
+        this.ballRadius = 8;
+        this.x = 0;
+        this.y = 0;
+        this.dx = 0;
+        this.dy = 0;
+        this.initialSpeed = 5;
+        
+        this.keys = {};
+        
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleKeyUp = this.handleKeyUp.bind(this);
+    }
+
+    start() {
+        this.resize();
+        this.reset();
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('keyup', this.handleKeyUp);
+        
+        // Show start screen
+        this.isStarted = false;
+        gameOverlay.classList.remove('hidden');
+        document.getElementById('overlay-title').textContent = "PING PONG";
+        document.getElementById('overlay-title').classList.add('glow-text');
+        overlayScore.innerHTML = `
+            <div class="flex flex-col gap-4 items-center">
+                <p class="text-xl font-bold text-purple-400 uppercase">CHOOSE MODE</p>
+                <div class="flex gap-4">
+                    <button id="mode-ai" class="bg-white/10 border-2 border-white/20 px-4 py-2 rounded-xl hover:bg-purple-600 transition-all font-bold uppercase italic">VS AI</button>
+                    <button id="mode-2p" class="bg-white/10 border-2 border-white/20 px-4 py-2 rounded-xl hover:bg-purple-600 transition-all font-bold uppercase italic">2 PLAYER</button>
+                </div>
+                <p class="text-xs text-white/60 mt-2">P1: W/S | P2: UP/DOWN</p>
+            </div>
+        `;
+        
+        document.getElementById('mode-ai').onclick = () => { this.mode = 'ai'; this.begin(); };
+        document.getElementById('mode-2p').onclick = () => { this.mode = '2p'; this.begin(); };
+        
+        restartBtn.classList.add('hidden');
+        this.draw();
+    }
+
+    begin() {
+        this.isStarted = true;
+        gameOverlay.classList.add('hidden');
+        restartBtn.classList.remove('hidden');
+        restartBtn.textContent = "PLAY AGAIN!";
+        this.resetBall();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    }
+
+    stop() {
+        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('keyup', this.handleKeyUp);
+    }
+
+    reset() {
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        this.paddle1Y = (height - this.paddleHeight) / 2;
+        this.paddle2Y = (height - this.paddleHeight) / 2;
+        this.score1 = 0;
+        this.score2 = 0;
+        this.isGameOver = false;
+        this.resetBall();
+    }
+
+    resetBall() {
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        this.x = width / 2;
+        this.y = height / 2;
+        this.dx = (Math.random() > 0.5 ? 1 : -1) * this.initialSpeed;
+        this.dy = (Math.random() * 2 - 1) * this.initialSpeed;
+    }
+
+    resize() {
+        const container = this.canvas.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        const width = container.clientWidth || 800;
+        const height = container.clientHeight || 450;
+        
+        this.canvas.width = width * dpr;
+        this.canvas.height = height * dpr;
+        this.canvas.style.width = `${width}px`;
+        this.canvas.style.height = `${height}px`;
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    handleKeyDown(e) {
+        this.keys[e.key] = true;
+        if (['ArrowUp', 'ArrowDown', 'w', 's', 'W', 'S'].includes(e.key)) {
+            e.preventDefault();
+        }
+    }
+
+    handleKeyUp(e) {
+        this.keys[e.key] = false;
+    }
+
+    update() {
+        if (this.isGameOver || !this.isStarted) return;
+
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+
+        // Player 1 Movement (W/S)
+        if ((this.keys['w'] || this.keys['W']) && this.paddle1Y > 0) {
+            this.paddle1Y -= this.paddleSpeed;
+        }
+        if ((this.keys['s'] || this.keys['S']) && this.paddle1Y < height - this.paddleHeight) {
+            this.paddle1Y += this.paddleSpeed;
+        }
+
+        // Player 2 or AI Movement
+        if (this.mode === '2p') {
+            if (this.keys['ArrowUp'] && this.paddle2Y > 0) {
+                this.paddle2Y -= this.paddleSpeed;
+            }
+            if (this.keys['ArrowDown'] && this.paddle2Y < height - this.paddleHeight) {
+                this.paddle2Y += this.paddleSpeed;
+            }
+        } else {
+            // AI Logic
+            const paddle2Center = this.paddle2Y + this.paddleHeight / 2;
+            if (paddle2Center < this.y - 10) {
+                this.paddle2Y += this.paddleSpeed * 0.8;
+            } else if (paddle2Center > this.y + 10) {
+                this.paddle2Y -= this.paddleSpeed * 0.8;
+            }
+            // Clamp AI paddle
+            if (this.paddle2Y < 0) this.paddle2Y = 0;
+            if (this.paddle2Y > height - this.paddleHeight) this.paddle2Y = height - this.paddleHeight;
+        }
+
+        // Ball movement
+        this.x += this.dx;
+        this.y += this.dy;
+
+        // Wall bounce (Top/Bottom)
+        if (this.y < this.ballRadius || this.y > height - this.ballRadius) {
+            this.dy = -this.dy;
+        }
+
+        // Paddle Collision (Player 1)
+        if (this.x < this.paddleWidth + this.ballRadius) {
+            if (this.y > this.paddle1Y && this.y < this.paddle1Y + this.paddleHeight) {
+                this.dx = -this.dx * 1.05; // Speed up slightly
+                this.x = this.paddleWidth + this.ballRadius;
+                // Angle based on hit position
+                const deltaY = this.y - (this.paddle1Y + this.paddleHeight / 2);
+                this.dy = deltaY * 0.2;
+            } else if (this.x < 0) {
+                this.score2++;
+                this.resetBall();
+                if (this.score2 >= 10) this.gameOver(2);
+            }
+        }
+
+        // Paddle Collision (Player 2)
+        if (this.x > width - this.paddleWidth - this.ballRadius) {
+            if (this.y > this.paddle2Y && this.y < this.paddle2Y + this.paddleHeight) {
+                this.dx = -this.dx * 1.05; // Speed up slightly
+                this.x = width - this.paddleWidth - this.ballRadius;
+                // Angle based on hit position
+                const deltaY = this.y - (this.paddle2Y + this.paddleHeight / 2);
+                this.dy = deltaY * 0.2;
+            } else if (this.x > width) {
+                this.score1++;
+                this.resetBall();
+                if (this.score1 >= 10) this.gameOver(1);
+            }
+        }
+
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    }
+
+    draw() {
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        
+        this.ctx.clearRect(0, 0, width, height);
+        
+        // Background
+        this.ctx.fillStyle = '#050505';
+        this.ctx.fillRect(0, 0, width, height);
+
+        // Center Line
+        this.ctx.setLineDash([10, 10]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(width / 2, 0);
+        this.ctx.lineTo(width / 2, height);
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+
+        // Paddles
+        this.ctx.fillStyle = '#a855f7';
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = '#a855f7';
+        this.ctx.fillRect(0, this.paddle1Y, this.paddleWidth, this.paddleHeight);
+        this.ctx.fillRect(width - this.paddleWidth, this.paddle2Y, this.paddleWidth, this.paddleHeight);
+        this.ctx.shadowBlur = 0;
+
+        // Ball
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.ballRadius, 0, Math.PI * 2);
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.fill();
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = "#ffffff";
+        this.ctx.closePath();
+        this.ctx.shadowBlur = 0;
+
+        // Scores
+        this.ctx.font = 'black 48px Fredoka';
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(this.score1, width / 4, 60);
+        this.ctx.fillText(this.score2, (width / 4) * 3, 60);
+    }
+
+    gameOver(winner) {
+        this.isGameOver = true;
+        gameOverlay.classList.remove('hidden');
+        restartBtn.classList.remove('hidden');
+        document.getElementById('overlay-title').textContent = winner === 1 ? "PLAYER 1 WINS!" : (this.mode === 'ai' ? "AI WINS!" : "PLAYER 2 WINS!");
+        overlayScore.textContent = `FINAL SCORE: ${this.score1} - ${this.score2}`;
+    }
+}
 
 class BreakoutGame {
     constructor(canvas) {
@@ -517,6 +770,27 @@ async function loadGames() {
                 "category": "Classic"
             },
             {
+                "id": "dune-game",
+                "title": "Dune Dash",
+                "thumbnail": "https://picsum.photos/seed/dune/400/250",
+                "iframeUrl": "/dune.html",
+                "category": "Action"
+            },
+            {
+                "id": "snow-rider-3d",
+                "title": "Snow Rider 3D",
+                "thumbnail": "https://picsum.photos/seed/snowrider/400/250",
+                "iframeUrl": "/snow-rider.html",
+                "category": "Action"
+            },
+            {
+                "id": "ping-pong",
+                "title": "Ping Pong",
+                "thumbnail": "https://picsum.photos/seed/pingpong/400/250",
+                "type": "internal",
+                "category": "Classic"
+            },
+            {
                 "id": "bitlife",
                 "title": "BitLife",
                 "thumbnail": "https://picsum.photos/seed/bitlife/400/250",
@@ -594,6 +868,9 @@ function playGame(gameId) {
         } else if (gameId === 'atari-breakout') {
             breakoutGame = new BreakoutGame(gameCanvas);
             setTimeout(() => breakoutGame.start(), 50);
+        } else if (gameId === 'ping-pong') {
+            pingPongGame = new PingPongGame(gameCanvas);
+            setTimeout(() => pingPongGame.start(), 50);
         }
     } else {
         if (internalGameContainer) internalGameContainer.classList.add('hidden');
@@ -617,6 +894,10 @@ function closePlayer() {
     if (breakoutGame) {
         breakoutGame.stop();
         breakoutGame = null;
+    }
+    if (pingPongGame) {
+        pingPongGame.stop();
+        pingPongGame = null;
     }
     if (playerView) playerView.classList.add('hidden');
     if (gridView) gridView.classList.remove('hidden');
@@ -655,6 +936,10 @@ if (restartBtn) {
                 breakoutGame.reset();
                 breakoutGame.begin();
             }
+        }
+        if (pingPongGame) {
+            pingPongGame.reset();
+            pingPongGame.begin();
         }
     });
 }
@@ -707,4 +992,5 @@ function initStars() {
 
 window.SnakeGame = SnakeGame;
 window.BreakoutGame = BreakoutGame;
+window.PingPongGame = PingPongGame;
 window.playGame = playGame;

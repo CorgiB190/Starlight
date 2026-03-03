@@ -103,6 +103,13 @@
                     const breakout = new BreakoutGame(canvas);
                     setTimeout(() => breakout.start(), 100);
                     document.getElementById('restart-btn').onclick = () => breakout.reset();
+                } else if (gameId === 'ping-pong') {
+                    const pingpong = new PingPongGame(canvas);
+                    setTimeout(() => pingpong.start(), 100);
+                    document.getElementById('restart-btn').onclick = () => {
+                        pingpong.reset();
+                        pingpong.begin();
+                    };
                 }
             } else {
                 iframe.classList.remove('hidden');
