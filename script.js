@@ -257,6 +257,7 @@ class BreakoutGame {
         this.isGameOver = true;
         gameOverlay.classList.remove('hidden');
         document.getElementById('overlay-title').textContent = win ? "YOU WIN!" : "GAME OVER";
+        document.getElementById('overlay-title').classList.add('glow-text');
         overlayScore.textContent = `SCORE: ${this.score}`;
     }
 }
@@ -476,6 +477,8 @@ class SnakeGame {
     gameOver() {
         this.isGameOver = true;
         gameOverlay.classList.remove('hidden');
+        document.getElementById('overlay-title').textContent = "GAME OVER";
+        document.getElementById('overlay-title').classList.add('glow-text');
         overlayScore.textContent = `SCORE: ${this.score}`;
     }
 }
@@ -484,10 +487,51 @@ class SnakeGame {
 async function loadGames() {
     try {
         const response = await fetch('/api/games');
+        if (!response.ok) throw new Error('Failed to fetch games');
         games = await response.json();
+        if (!Array.isArray(games) || games.length === 0) throw new Error('No games data');
         renderGames();
     } catch (error) {
         console.error('Error loading games:', error);
+        // Fallback data if API fails
+        games = [
+            {
+                "id": "stickman-parkour",
+                "title": "Stickman Parkour",
+                "thumbnail": "https://picsum.photos/seed/stickman/400/250",
+                "iframeUrl": "https://d11jzht7mj96rr.cloudfront.net/games/2024/construct/219/stickman-parkour/index-gg.html",
+                "category": "Action"
+            },
+            {
+                "id": "retro-snake",
+                "title": "Retro Snake",
+                "thumbnail": "https://picsum.photos/seed/snake/400/250",
+                "type": "internal",
+                "category": "Classic"
+            },
+            {
+                "id": "atari-breakout",
+                "title": "Atari Breakout",
+                "thumbnail": "https://picsum.photos/seed/breakout/400/250",
+                "type": "internal",
+                "category": "Classic"
+            },
+            {
+                "id": "bitlife",
+                "title": "BitLife",
+                "thumbnail": "https://picsum.photos/seed/bitlife/400/250",
+                "iframeUrl": "https://macvg-games.github.io/strategy-games/bitlife/",
+                "category": "Simulation"
+            },
+            {
+                "id": "basketball-shoutout",
+                "title": "Basketball Shoutout",
+                "thumbnail": "https://picsum.photos/seed/basketball/400/250",
+                "iframeUrl": "https://app-197304.games.s3.yandex.net/197304/kj9rcykboy6eol5xnn250jesr7v0hoh1/index.html",
+                "category": "Sports"
+            }
+        ];
+        renderGames();
     }
 }
 
@@ -531,15 +575,23 @@ function playGame(gameId) {
     if (currentGameTitle) currentGameTitle.textContent = game.title;
     if (playingStatus) playingStatus.textContent = `Playing ${game.title}`;
 
+    // Clear previous game instances
+    if (snakeGame) {
+        snakeGame.stop();
+        snakeGame = null;
+    }
+    if (breakoutGame) {
+        breakoutGame.stop();
+        breakoutGame = null;
+    }
+
     if (game.type === 'internal') {
         if (gameIframe) gameIframe.classList.add('hidden');
         if (internalGameContainer) internalGameContainer.classList.remove('hidden');
         if (gameId === 'retro-snake') {
-            if (snakeGame) snakeGame.stop();
             snakeGame = new SnakeGame(gameCanvas);
             setTimeout(() => snakeGame.start(), 50);
         } else if (gameId === 'atari-breakout') {
-            if (breakoutGame) breakoutGame.stop();
             breakoutGame = new BreakoutGame(gameCanvas);
             setTimeout(() => breakoutGame.start(), 50);
         }
